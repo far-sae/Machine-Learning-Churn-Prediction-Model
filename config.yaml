@@ -1,0 +1,126 @@
+# Machine Learning Churn Prediction Model Configuration
+
+# Data Sources
+data:
+  postgres:
+    host: localhost
+    port: 5432
+    database: customer_db
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
+  
+  mongodb:
+    connection_string: ${MONGO_CONNECTION_STRING}
+    database: engagement_db
+    collection: user_events
+  
+  api_endpoints:
+    transactions: https://api.company.com/v1/transactions
+    customer_profile: https://api.company.com/v1/customers
+    engagement: https://api.company.com/v1/engagement
+
+# Feature Engineering
+features:
+  lookback_periods: [7, 14, 30, 60, 90, 180, 365]
+  rfm_metrics: true
+  behavioral_features: true
+  engagement_features: true
+  transaction_features: true
+  demographic_features: true
+
+# Model Configuration
+models:
+  random_forest:
+    n_estimators: 200
+    max_depth: 15
+    min_samples_split: 5
+    min_samples_leaf: 2
+    max_features: sqrt
+    class_weight: balanced
+    random_state: 42
+    n_jobs: -1
+  
+  xgboost:
+    n_estimators: 200
+    max_depth: 10
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    gamma: 1
+    reg_alpha: 0.1
+    reg_lambda: 1
+    scale_pos_weight: 3
+    random_state: 42
+    n_jobs: -1
+  
+  ensemble:
+    rf_weight: 0.4
+    xgb_weight: 0.6
+    threshold_high_risk: 0.7
+    threshold_medium_risk: 0.4
+
+# Training Configuration
+training:
+  test_size: 0.2
+  validation_size: 0.1
+  cross_validation_folds: 5
+  stratify: true
+  handle_imbalance: true
+  smote_sampling_strategy: 0.5
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: http://localhost:5000
+  experiment_name: churn_prediction
+  model_registry_name: churn_model_production
+  artifact_location: ./mlruns
+  autolog: true
+
+# Prediction Configuration
+prediction:
+  batch_size: 10000
+  confidence_threshold: 0.5
+  score_all_active_customers: true
+  output_format: json
+  save_to_database: true
+
+# CRM Integration
+crm:
+  api_endpoint: ${CRM_API_ENDPOINT}
+  api_key: ${CRM_API_KEY}
+  campaign_templates:
+    high_risk:
+      campaign_id: CHURN_HIGH_RISK_001
+      channel: [email, sms, push]
+      priority: urgent
+    medium_risk:
+      campaign_id: CHURN_MEDIUM_RISK_002
+      channel: [email, push]
+      priority: high
+    low_risk:
+      campaign_id: CHURN_LOW_RISK_003
+      channel: [email]
+      priority: normal
+
+# Scheduling
+scheduler:
+  data_collection_cron: "0 1 * * *"  # Daily at 1 AM
+  model_training_cron: "0 2 * * *"   # Daily at 2 AM
+  prediction_cron: "0 6 * * *"        # Daily at 6 AM
+  campaign_trigger_cron: "0 7 * * *" # Daily at 7 AM
+  timezone: UTC
+
+# Logging
+logging:
+  level: INFO
+  format: "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
+  rotation: "100 MB"
+  retention: "30 days"
+  log_dir: ./logs
+
+# Monitoring
+monitoring:
+  model_performance_threshold: 0.75
+  feature_drift_threshold: 0.1
+  prediction_drift_threshold: 0.15
+  alert_email: ${ALERT_EMAIL}
